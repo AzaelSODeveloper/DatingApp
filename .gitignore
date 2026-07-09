@@ -482,3 +482,6 @@ $RECYCLE.BIN/
 *.swp
 API/appsettings.json
 API/dating.db*
+
+# mkcert local dev certificates (private key must never be committed)
+API/certs/
