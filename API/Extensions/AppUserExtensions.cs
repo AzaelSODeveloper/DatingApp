@@ -13,9 +13,10 @@ namespace API.Extensions
                 Id = user.Id.ToString(),
                 Email = user.Email,
                 DisplayName = user.DisplayName,
+                ImageUrl = user.ImageUrl,
                 Token = tokenService.CreateToken(user)
-            };
-        }
+            };            
+        }   
         
     }
 }
