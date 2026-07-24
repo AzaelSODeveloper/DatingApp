@@ -28,7 +28,7 @@ namespace API.Entities
         //Navigation property
         [JsonIgnore]
         [ForeignKey(nameof(Id))]
-        public AppUser AppUser { get; set; } = null!;
+        public AppUser User { get; set; } = null!;
         [JsonIgnore]
         public List<Photo> Photos { get; set; } = [];
     }

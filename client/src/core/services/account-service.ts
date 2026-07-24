@@ -14,7 +14,7 @@ export class AccountService {
   private baseUrl = environment.apiUrl;
 
   register(creds: RegisterCreds) {
-    return this.http.post<User>(this.baseUrl + '/account/register', creds).pipe(
+    return this.http.post<User>(this.baseUrl + 'account/register', creds).pipe(
       tap((user: User) => {
         this.setCurrentUser(user);
       })
@@ -22,7 +22,7 @@ export class AccountService {
   } 
 
   login(creds: any) {
-    return this.http.post<User | null>(this.baseUrl + '/account/login', creds).pipe(
+    return this.http.post<User | null>(this.baseUrl + 'account/login', creds).pipe(
       tap((user: User | null) => {
         if (user) {
           this.setCurrentUser(user);
