@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using API.Entities;
 using API.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Data
@@ -16,6 +17,7 @@ namespace API.Data
         {
             return await context.Members
             .Include(x => x.User)
+            .Include(x => x.Photos)
             .SingleOrDefaultAsync(x => x.Id == id);
         }
 
@@ -43,5 +45,6 @@ namespace API.Data
         {
             context.Entry(member).State = EntityState.Modified;
         }
+        
     }
 }
