@@ -1,13 +1,14 @@
-using System;
 using API.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace API.Data;
 
-public class AppDbContext(DbContextOptions options) : DbContext(options)
+public class AppDbContext(DbContextOptions options) : IdentityDbContext<AppUser>(options)
 {
-    public DbSet<AppUser>Users {get; set;}
+    
     public DbSet<Member> Members {get; set;}
     public DbSet<Photo> Photos {get; set;}
     public DbSet<MemberLike> Likes {get; set;}
@@ -16,19 +17,30 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     {
         base.OnModelCreating(modelBuilder);
 
+        // ConcurrencyStamp must be hardcoded: IdentityRole generates a new Guid for it
+        // in its constructor, which would make the model differ on every build.
+        modelBuilder.Entity<IdentityRole>().HasData(
+            new IdentityRole{Id = "member-id", Name = "Member", NormalizedName = "MEMBER",
+                ConcurrencyStamp = "member-stamp"},
+            new IdentityRole{Id = "moderator-id", Name = "Moderator", NormalizedName = "MODERATOR",
+                ConcurrencyStamp = "moderator-stamp"},
+            new IdentityRole{Id = "admin-id", Name = "Admin", NormalizedName = "ADMIN",
+                ConcurrencyStamp = "admin-stamp"}
+        );
+
         modelBuilder.Entity<MemberLike>()
         .HasKey(x => new { x.SourceMemberId, x.TargetMemberId });
 
         modelBuilder.Entity<MemberLike>()
         .HasOne(s => s.SourceMember)
-        .WithMany(t => t.LikedByMembers)
+        .WithMany(t => t.LikedMembers)
         .HasForeignKey(s => s.SourceMemberId)
         .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<MemberLike>()
-        .HasOne(s => s.SourceMember)
+        .HasOne(s => s.TargetMember)
         .WithMany(t => t.LikedByMembers)
-        .HasForeignKey(s => s.SourceMemberId)
+        .HasForeignKey(s => s.TargetMemberId)
         .OnDelete(DeleteBehavior.NoAction);
 
         var dateTimeConverter = new ValueConverter<DateTime, DateTime>(

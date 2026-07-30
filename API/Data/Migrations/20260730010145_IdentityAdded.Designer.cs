@@ -3,6 +3,7 @@ using System;
 using API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260730010145_IdentityAdded")]
+    partial class IdentityAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
@@ -203,21 +206,21 @@ namespace API.Data.Migrations
                         new
                         {
                             Id = "member-id",
-                            ConcurrencyStamp = "member-stamp",
+                            ConcurrencyStamp = "ff7c40c4-2465-4b74-aa0a-c0ee11a64ecd",
                             Name = "Member",
                             NormalizedName = "MEMBER"
                         },
                         new
                         {
                             Id = "moderator-id",
-                            ConcurrencyStamp = "moderator-stamp",
+                            ConcurrencyStamp = "c586319b-d1c4-4e67-b44c-ca36cf2154ef",
                             Name = "Moderator",
                             NormalizedName = "MODERATOR"
                         },
                         new
                         {
                             Id = "admin-id",
-                            ConcurrencyStamp = "admin-stamp",
+                            ConcurrencyStamp = "9a67dbe3-9af2-40fe-aacb-8e6d3a22e2e9",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -339,15 +342,15 @@ namespace API.Data.Migrations
             modelBuilder.Entity("API.Entities.MemberLike", b =>
                 {
                     b.HasOne("API.Entities.Member", "SourceMember")
-                        .WithMany("LikedMembers")
+                        .WithMany("LikedByMembers")
                         .HasForeignKey("SourceMemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("API.Entities.Member", "TargetMember")
-                        .WithMany("LikedByMembers")
+                        .WithMany("LikedMembers")
                         .HasForeignKey("TargetMemberId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("SourceMember");
