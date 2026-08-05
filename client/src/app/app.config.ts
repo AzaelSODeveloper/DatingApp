@@ -21,6 +21,9 @@ export const appConfig: ApplicationConfig = {
           try {
             await lastValueFrom(initService.init());
           }
+          catch {
+            // never block bootstrap on a failed session restore
+          }
           finally {
             const splash = document.getElementById('initial-splash');
             if (splash) {

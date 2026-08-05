@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { AccountService } from './account-service';
-import { Observable, of, tap } from 'rxjs';
+import { catchError, of, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -16,7 +16,10 @@ export class InitService {
           this.accountService.setCurrentUser(user);
           this.accountService.startTokenRefreshInterval();
         }
-      }))  
+      }),
+      // no session to restore (no cookie, or an expired/stale one) is not a
+      // failure - the app just starts logged out
+      catchError(() => of(null)))
   }
 
 }
