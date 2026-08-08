@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO.Compression;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -14,6 +15,11 @@ namespace API.Data
 {
     public class MessageRepository(AppDbContext context) : IMessageRepository
     {
+        public void AddGroup(Entities.Group group)
+        {
+            context.Groups.Add(group);
+        }
+
         public void AddMessage(Message message)
         {
             context.Messages.Add(message);
@@ -24,12 +30,29 @@ namespace API.Data
             context.Messages.Remove(message);
         }
 
+        public async Task<Connection?> GetConnection(string connectionId)
+        {
+            return await context.Connections.FindAsync(connectionId);
+        }
+
+        public async Task<Entities.Group?> GetGroupForConnection(string connectionId)
+        {
+            return await context.Groups.Include(x => x.Connections)
+            .Where(x => x.Connections.Any(c => c.ConnectionId == connectionId))
+            .FirstOrDefaultAsync();
+            
+        }
+
+        public async Task<Entities.Group?> GetMeesageGroup(string groupName)
+        {
+            return await context.Groups.Include(x => x.Connections)
+            .FirstOrDefaultAsync(x => x.Name == groupName);
+        }
+
         public async Task<Message?> GetMessage(string messageId)
         {
             return await context.Messages.FindAsync(messageId);
         }
-
-        
 
         public async Task<PaginatedResult<MessageDto>> GetMessagesForMember(MessageParams messageParams)
         {
@@ -68,9 +91,18 @@ namespace API.Data
              .Select(MessageExtensions.ToDtoProjection()).ToListAsync();
         }
 
+        public async Task RemoveConnection(string connectionId)
+        {
+            await context.Connections
+            .Where(x => x.ConnectionId == connectionId)
+            .ExecuteDeleteAsync();
+        }
+
         public async Task<bool> SaveAllAsync()
         {
             return await context.SaveChangesAsync() > 0;
         }
+
+        
     }
 }

@@ -1,5 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { MessageService } from '../../core/services/message-service';
+import { PresenceService } from '../../core/services/presence-service';
 import { PaginatedResult } from '../../types/pagination';
 import { Message } from '../../types/message';
 import { Paginator } from "../../shared/paginator/paginator";
@@ -14,6 +15,7 @@ import { DatePipe } from '@angular/common';
 })
 export class Messages implements OnInit {  
   private messageService = inject(MessageService);
+  private presenceService = inject(PresenceService);
   protected container = 'Inbox';
   protected fetchedContainer = 'Inbox';
   protected pageNumber = 1;
@@ -24,6 +26,23 @@ export class Messages implements OnInit {
     {label: 'Inbox', value: "Inbox"  },
     {label: 'Outbox', value: "Outbox"  }
   ]
+
+  constructor() {
+    // a message pushed by the presence hub belongs at the top of the inbox.
+    // only page 1 is touched, so paging through older messages stays stable.
+    effect(() => {
+      const message = this.presenceService.newMessage();
+      if (!message || this.fetchedContainer !== 'Inbox' || this.pageNumber !== 1) return;
+
+      this.paginatedMessages.update(prev => {
+        if (!prev || prev.items.some(x => x.id === message.id)) return prev;
+        return {
+          items: [message, ...prev.items].slice(0, this.pageSize),
+          metadata: {...prev.metadata, totalCount: prev.metadata.totalCount + 1}
+        }
+      })
+    })
+  }
 
   ngOnInit(): void {
     this.loadMessages();
