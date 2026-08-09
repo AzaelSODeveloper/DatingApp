@@ -16,8 +16,7 @@ using Group = API.Entities.Group;
 namespace API.SingalR
 {
     [Authorize]
-    public class MessageHub(IMessageRepository messageRepository,
-     IMemberRepository memberRepository, IHubContext<PresenceHub> presenceHub) : Hub
+    public class MessageHub(IUnitOfWork uof, IHubContext<PresenceHub> presenceHub) : Hub
     {
         public override async Task OnConnectedAsync()
         {
@@ -28,14 +27,14 @@ namespace API.SingalR
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
             await AddtoGroup(groupName);
             
-            var messages = await messageRepository.GetMessageThread(GetUserId(), otherUser);
+            var messages = await uof.MessageRepository.GetMessageThread(GetUserId(), otherUser);
 
             await Clients.Group(groupName).SendAsync("ReceiveMessageThread", messages);
         }
         public async Task SendMessage(CreateMessageDto createMessageDto)
         {
-            var sender = await memberRepository.GetMemberByIdAsync(GetUserId());
-            var recipient = await memberRepository.GetMemberByIdAsync(createMessageDto.RecipientId);
+            var sender = await uof.MemberRepository.GetMemberByIdAsync(GetUserId());
+            var recipient = await uof.MemberRepository.GetMemberByIdAsync(createMessageDto.RecipientId);
             if(recipient == null 
             || sender == null 
             || sender.Id == createMessageDto.RecipientId)
@@ -49,7 +48,7 @@ namespace API.SingalR
                 Content = createMessageDto.Content
             };
             var groupName = GetGroupName(sender.Id, recipient.Id);
-            var group = await messageRepository.GetMeesageGroup(groupName);
+            var group = await uof.MessageRepository.GetMeesageGroup(groupName);
             var userInGroup = group != null && group.Connections.Any(x =>
              x.UserId == message.RecipientId);
 
@@ -58,9 +57,9 @@ namespace API.SingalR
                 message.DateRead = DateTime.UtcNow;
             }
 
-            messageRepository.AddMessage(message);
+            uof.MessageRepository.AddMessage(message);
 
-            if (await messageRepository.SaveAllAsync())
+            if (await uof.Complete())
             {                
                 await Clients.Group(groupName).SendAsync("NewMessage", message.ToDto());
                 var connections = await PresenceTracker.GetConnectionForUser(recipient.Id);
@@ -73,22 +72,22 @@ namespace API.SingalR
 
         public override async Task OnDisconnectedAsync(Exception? exception)        
         {
-            await messageRepository.RemoveConnection(Context.ConnectionId);
+            await uof.MessageRepository.RemoveConnection(Context.ConnectionId);
             await base.OnDisconnectedAsync(exception);
         }
 
         private async Task<bool> AddtoGroup(string groupName)
         {
-            var group = await messageRepository.GetMeesageGroup(groupName);
+            var group = await uof.MessageRepository.GetMeesageGroup(groupName);
             var connection = new Connection(Context.ConnectionId, GetUserId());
             if(group == null)
             {
                 group = new Group(groupName);
-                messageRepository.AddGroup(group);
+                uof.MessageRepository.AddGroup(group);
             }
             group.Connections.Add(connection);
             
-            return await messageRepository.SaveAllAsync();
+            return await uof.Complete();
         }
 
         private static string GetGroupName(string? caller, StringValues? other)

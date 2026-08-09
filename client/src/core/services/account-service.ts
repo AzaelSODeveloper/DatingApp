@@ -20,45 +20,45 @@ export class AccountService {
   private baseUrl = environment.apiUrl;
 
   register(creds: RegisterCreds) {
-    return this.http.post<User>(this.baseUrl + 'account/register', creds, {withCredentials: true}).pipe(
+    return this.http.post<User>(this.baseUrl + 'account/register', creds, { withCredentials: true }).pipe(
       tap((user: User) => {
         this.setCurrentUser(user);
         this.startTokenRefreshInterval();
       })
     );
-  } 
-
-  refreshToken(){
-    return this.http.post<User>(this.baseUrl + 'account/refresh-token', {}, {withCredentials: true})
   }
 
-  startTokenRefreshInterval(){
+  refreshToken() {
+    return this.http.post<User>(this.baseUrl + 'account/refresh-token', {}, { withCredentials: true })
+  }
+
+  startTokenRefreshInterval() {
     setInterval(() => {
-      this.http.post<User>(this.baseUrl + 'account/refresh-token', {}, {withCredentials: true}).subscribe({
+      this.http.post<User>(this.baseUrl + 'account/refresh-token', {}, { withCredentials: true }).subscribe({
         next: user => {
           this.setCurrentUser(user);
         },
-        error: () => {this.logout()}
+        error: () => { this.logout() }
       })
     }, 5 * 60 * 1000)
   }
 
   login(creds: any) {
-    return this.http.post<User | null>(this.baseUrl + 'account/login', creds, {withCredentials: true}).pipe(
+    return this.http.post<User | null>(this.baseUrl + 'account/login', creds, { withCredentials: true }).pipe(
       tap((user: User | null) => {
         if (user) {
           this.setCurrentUser(user);
-        }      
+        }
       })
     );
   }
 
   setCurrentUser(user: User | null) {
     if (user) {
-      user.roles = this.getRolesFromToken(user);      
+      user.roles = this.getRolesFromToken(user);
       this.currentUser.set(user);
       this.likesService.getLikesIds();
-      if(this.presenceService.hubConnection?.state !== HubConnectionState.Connected){
+      if (this.presenceService.hubConnection?.state !== HubConnectionState.Connected) {
         this.presenceService.createHubConnection(user);
       }
     } else {
@@ -67,13 +67,17 @@ export class AccountService {
   }
 
   logout() {
-    this.currentUser.set(null);    
-    this.likesService.clearLikeIds();
-    localStorage.removeItem('filters');
-    this.presenceService.stopHubConnection();
-  } 
+    this.http.post(this.baseUrl + 'account/logout', {}, { withCredentials: true }).subscribe({
+      next: () => {
+        this.currentUser.set(null);
+        this.likesService.clearLikeIds();
+        localStorage.removeItem('filters');
+        this.presenceService.stopHubConnection();
+      }
+    })
+  }
 
-  private getRolesFromToken(user: User): string[]{
+  private getRolesFromToken(user: User): string[] {
     const payload = user.token.split('.')[1];
     const decoded = atob(payload);
     const jsonPayload = JSON.parse(decoded);

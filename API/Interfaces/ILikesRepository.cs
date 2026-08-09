@@ -9,7 +9,6 @@ namespace API.Interfaces
         Task<PaginatedResult<Member>> GetMemberLikes(LikesParams likesParams);
         Task<IReadOnlyList<string>> GetCurrentMemberLikeIds(string memberId);
         void DeleteLike(MemberLike like);
-        void AddLike(MemberLike like);
-        Task<bool> SaveAllChanges();
+        void AddLike(MemberLike like);        
     }
 }

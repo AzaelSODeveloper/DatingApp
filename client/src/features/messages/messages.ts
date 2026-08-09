@@ -6,6 +6,7 @@ import { Message } from '../../types/message';
 import { Paginator } from "../../shared/paginator/paginator";
 import { RouterLink } from "@angular/router";
 import { DatePipe } from '@angular/common';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog-service';
 
 @Component({
   selector: 'app-messages',
@@ -15,6 +16,7 @@ import { DatePipe } from '@angular/common';
 })
 export class Messages implements OnInit {  
   private messageService = inject(MessageService);
+  private confirmDialog = inject(ConfirmDialogService);
   private presenceService = inject(PresenceService);
   protected container = 'Inbox';
   protected fetchedContainer = 'Inbox';
@@ -48,21 +50,25 @@ export class Messages implements OnInit {
     this.loadMessages();
   }
 
-  deleteMessage(event: Event, id: string){
+  async confirmDelete(event: Event, id: string){
     event.stopPropagation();
-    this.messageService.deleteMessage(id);
-    const current = this.paginatedMessages();
-    if(current?.items){
-      this.paginatedMessages.update(prev => {
-        if(!prev) return null;
+    const ok = await this.confirmDialog.confirm('Are you sure you want to delete this message?');
+    if(ok) this.deleteMessage(id);
+  }
 
-        const newItems = prev.items.filter(x => x.id !== id) || [];
-        return {
-          items: newItems,
-          metadata: prev.metadata
-        }
-      })
-    }
+  deleteMessage(id: string){
+    // only drop the row once the server confirms the delete
+    this.messageService.deleteMessage(id).subscribe({
+      next: () => {
+        this.paginatedMessages.update(prev => {
+          if(!prev) return prev;
+          return {
+            items: prev.items.filter(x => x.id !== id),
+            metadata: {...prev.metadata, totalCount: prev.metadata.totalCount - 1}
+          }
+        })
+      }
+    })
   }
   loadMessages(){
     this.messageService.getMessage(this.container, this.pageNumber, this.pageSize).subscribe({
