@@ -50,10 +50,12 @@ jobs:
         name: datingapp
         path: publish
 
-    # Render builds the Dockerfile itself; this just tells it to start a deploy
-    # once the build above has proven the code compiles. Only on main, never on PRs.
-    - name: Trigger Render deploy
+    # Deploys the published output straight to App Service.
+    # Only on main, so pull requests are validated but never deployed.
+    - name: Deploy to Azure App Service
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      run: curl -fsSL -X POST "$RENDER_DEPLOY_HOOK"
-      env:
-        RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: REPLACE_WITH_YOUR_APP_SERVICE_NAME
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: publish
