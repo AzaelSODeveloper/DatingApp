@@ -40,7 +40,7 @@ export class AccountService {
         },
         error: () => { this.logout() }
       })
-    }, 5 * 60 * 1000)
+    }, 14 * 24 * 60 * 60 * 1000) // 14 days
   }
 
   login(creds: any) {
