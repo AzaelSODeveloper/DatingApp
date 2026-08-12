@@ -10,7 +10,9 @@
             <h1 class="text-5xl font-bold">Find your match!</h1>
             <p class="py-6">Discover your perfect partner with our advanced matching algorithm. Sign up now and start your journey to love!</p>
             <div class="flex items-center gap-3">
-                <a (click)="showRegister(true)" class="btn btn-primary btn-large">Register</a>
+                @if(!accountService.currentUser()){
+                    <a (click)="showRegister(true)" class="btn btn-primary btn-large">Register</a>
+                }                
                 <a  class="btn btn-info btn-large">Learn more...</a>
             </div>
         </div>
